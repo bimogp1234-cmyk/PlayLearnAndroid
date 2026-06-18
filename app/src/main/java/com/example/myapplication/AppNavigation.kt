@@ -31,6 +31,7 @@ sealed class Screen(val route: String) {
     object AdminDashboard : Screen("admin_dashboard")
     object Settings : Screen("settings")
     object GradeSelection : Screen("grade_selection")
+    object Shop : Screen("shop")
 }
 
 @Composable
@@ -120,7 +121,8 @@ fun AppNavigation(
             StudentDashboardScreen(
                 onStartLesson = { navController.navigate(Screen.CoursePath.route) },
                 onNavigateToLeaderboard = { navController.navigate(Screen.Leaderboard.route) },
-                onNavigateToProfile = { navController.navigate(Screen.Profile.route) }
+                onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                onNavigateToShop = { navController.navigate(Screen.Shop.route) }
             )
         }
         composable(Screen.CoursePath.route) {
@@ -158,6 +160,11 @@ fun AppNavigation(
         }
         composable(Screen.Leaderboard.route) {
             LeaderboardScreen()
+        }
+        composable(Screen.Shop.route) {
+            ShopScreen(
+                onBack = { navController.popBackStack() }
+            )
         }
         composable(Screen.Profile.route) {
             ProfileScreen(

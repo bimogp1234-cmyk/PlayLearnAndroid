@@ -18,9 +18,19 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.myapplication.data.LeaderboardEntry
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LeaderboardScreen() {
+fun LeaderboardScreen(
+    leaderboardViewModel: LeaderboardViewModel = viewModel()
+) {
+    val entries by leaderboardViewModel.leaderboardEntries.collectAsState()
+    val isLoading by leaderboardViewModel.isLoading.collectAsState()
+
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Scaffold(
             topBar = {
@@ -32,34 +42,36 @@ fun LeaderboardScreen() {
                 )
             }
         ) { innerPadding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
-                // Podium Section
-                PodiumSection()
-
-                // List Section
-                LazyColumn(
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(vertical = 16.dp)
+                        .padding(innerPadding)
+                        .background(MaterialTheme.colorScheme.background)
                 ) {
-                    val rankings = listOf(
-                        RankingData("سارة", "2450 XP", true),
-                        RankingData("محمد", "2100 XP", false),
-                        RankingData("إيمان", "1950 XP", false),
-                        RankingData("أحمد (أنت)", "1250 XP", false),
-                        RankingData("خالد", "1100 XP", false),
-                        RankingData("ليلى", "950 XP", false)
-                    )
-                    
-                    itemsIndexed(rankings) { index, data ->
-                        RankingRow(rank = index + 4, data = data)
+                    // Podium Section for Top 3
+                    val top3 = entries.take(3)
+                    val remaining = if (entries.size > 3) entries.drop(3) else emptyList()
+
+                    if (top3.isNotEmpty()) {
+                        PodiumSection(top3)
+                    }
+
+                    // List Section
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(vertical = 16.dp)
+                    ) {
+                        itemsIndexed(remaining) { index, data ->
+                            RankingRow(rank = index + 4, data = data)
+                        }
                     }
                 }
             }
@@ -68,7 +80,11 @@ fun LeaderboardScreen() {
 }
 
 @Composable
-fun PodiumSection() {
+fun PodiumSection(top3: List<LeaderboardEntry>) {
+    val first = top3.getOrNull(0)
+    val second = top3.getOrNull(1)
+    val third = top3.getOrNull(2)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -76,9 +92,15 @@ fun PodiumSection() {
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.Bottom
     ) {
-        PodiumItem(name = "محمد", xp = "2100", rank = 2, height = 100.dp, color = Color(0xFF94A3B8))
-        PodiumItem(name = "سارة", xp = "2450", rank = 1, height = 140.dp, color = Color(0xFFFBB24F))
-        PodiumItem(name = "إيمان", xp = "1950", rank = 3, height = 80.dp, color = Color(0xFFB45309))
+        if (second != null) {
+            PodiumItem(name = second.userName, xp = second.xp.toString(), rank = 2, height = 100.dp, color = Color(0xFF94A3B8))
+        }
+        if (first != null) {
+            PodiumItem(name = first.userName, xp = first.xp.toString(), rank = 1, height = 140.dp, color = Color(0xFFFBB24F))
+        }
+        if (third != null) {
+            PodiumItem(name = third.userName, xp = third.xp.toString(), rank = 3, height = 80.dp, color = Color(0xFFB45309))
+        }
     }
 }
 
@@ -99,7 +121,7 @@ fun PodiumItem(name: String, xp: String, rank: Int, height: androidx.compose.ui.
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text(name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        Text(name, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1)
         Text("$xp XP", color = Color(0xFF6B7280), fontSize = 12.sp)
         Spacer(modifier = Modifier.height(8.dp))
         Surface(
@@ -117,26 +139,26 @@ fun PodiumItem(name: String, xp: String, rank: Int, height: androidx.compose.ui.
 }
 
 @Composable
-fun RankingRow(rank: Int, data: RankingData) {
+fun RankingRow(rank: Int, data: LeaderboardEntry) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (data.name.contains("أنت")) Color(0xFFF0FDF4) else Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         ),
-        border = if (data.name.contains("أنت")) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBBF7D0)) else null
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(rank.toString(), fontWeight = FontWeight.Black, color = Color(0xFF9CA3AF), modifier = Modifier.width(32.dp))
-            Box(modifier = Modifier.size(40.dp).background(Color(0xFFF3F4F6), CircleShape), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.size(40.dp).background(MaterialTheme.colorScheme.primaryContainer, CircleShape), contentAlignment = Alignment.Center) {
                 Text("👤", fontSize = 20.sp)
             }
             Spacer(modifier = Modifier.width(16.dp))
-            Text(data.name, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            Text(data.xp, fontWeight = FontWeight.Black, color = Color(0xFF16A34A))
+            Text(data.userName, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text("${data.xp} XP", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
         }
     }
 }

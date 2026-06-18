@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -124,13 +125,16 @@ fun ProfileScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
+                    val currentXp = user?.xp ?: 0
+                    val currentStreak = user?.streak ?: 0
+                    
                     val badges = listOf(
-                        BadgeData("البداية", "🚀", true),
-                        BadgeData("مثابر", "📚", true),
-                        BadgeData("نجم ساطع", "✨", true),
-                        BadgeData("صديق الجميع", "🤝", false),
-                        BadgeData("بطل الوحدة", "🏅", false),
-                        BadgeData("ليلي", "🌙", false)
+                        BadgeData("المبتدئ", "🌱", true),
+                        BadgeData("المنطلق", "🚀", currentXp >= 100),
+                        BadgeData("المثابر", "📚", currentStreak >= 3),
+                        BadgeData("نجم ساطع", "✨", currentXp >= 500),
+                        BadgeData("الخبير", "🎓", currentXp >= 1000),
+                        BadgeData("الأسطورة", "🔥", currentStreak >= 7)
                     )
                     
                     items(badges.size) { index ->
@@ -147,7 +151,7 @@ fun StatCard(label: String, value: String, color: Color, icon: String, modifier:
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
@@ -156,7 +160,7 @@ fun StatCard(label: String, value: String, color: Color, icon: String, modifier:
         ) {
             Text(icon, fontSize = 24.sp)
             Text(value, fontWeight = FontWeight.Black, fontSize = 20.sp, color = color)
-            Text(label, fontSize = 12.sp, color = Color.Gray)
+            Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -167,17 +171,27 @@ fun BadgeItem(badge: BadgeData) {
         Box(
             modifier = Modifier
                 .size(64.dp)
-                .background(if (badge.isUnlocked) Color(0xFFF0FDF4) else Color(0xFFF3F4F6), CircleShape),
+                .background(
+                    if (badge.isUnlocked) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) 
+                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), 
+                    CircleShape
+                ),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = badge.icon, 
                 fontSize = 32.sp, 
-                modifier = Modifier.alpha(if (badge.isUnlocked) 1f else 0.3f)
+                modifier = Modifier.alpha(if (badge.isUnlocked) 1f else 0.2f)
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text(badge.name, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (badge.isUnlocked) Color.Black else Color.Gray)
+        Text(
+            text = badge.name, 
+            fontSize = 12.sp, 
+            fontWeight = FontWeight.Bold, 
+            color = if (badge.isUnlocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+            textAlign = TextAlign.Center
+        )
     }
 }
 

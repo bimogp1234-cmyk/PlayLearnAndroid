@@ -14,6 +14,7 @@ data class User(
     val xp: Int = 0,
     val level: Int = 1,
     val streak: Int = 0,
+    val streakFreezes: Int = 0,
     val language: String = "ar",
     @ServerTimestamp val createdAt: Date? = null
 )

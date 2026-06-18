@@ -19,6 +19,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.ui.theme.*
 
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.example.myapplication.R
+
 @Composable
 fun LandingScreen(
     onLoginClick: () -> Unit,
@@ -69,18 +73,20 @@ fun LandingScreen(
                     enter = fadeIn(tween(1000)) + expandVertically(tween(1000))
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        // Branding Logo
+                        // Branding Logo using the new official app_logo.jpg
                         Box(
                             modifier = Modifier
-                                .size(120.dp)
+                                .size(160.dp)
                                 .scale(scale)
-                                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(32.dp))
-                                .padding(20.dp),
+                                .clip(RoundedCornerShape(32.dp))
+                                .background(Color.White)
+                                .padding(8.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "🎓",
-                                fontSize = 60.sp
+                            Image(
+                                painter = painterResource(id = R.drawable.app_logo),
+                                contentDescription = "PlayLearn Logo",
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
 

@@ -26,6 +26,7 @@ fun StudentDashboardScreen(
     onStartLesson: () -> Unit,
     onNavigateToLeaderboard: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onNavigateToShop: () -> Unit,
     authViewModel: AuthViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val user by authViewModel.currentUser.collectAsState()
@@ -67,7 +68,10 @@ fun StudentDashboardScreen(
 
                 item {
                     Spacer(modifier = Modifier.height(32.dp))
-                    QuickActionsRow(onNavigateToLeaderboard)
+                    QuickActionsRow(
+                        onLeaderboard = onNavigateToLeaderboard,
+                        onShop = onNavigateToShop
+                    )
                 }
 
                 item {
@@ -197,10 +201,10 @@ fun CurrentCourseCard(onClick: () -> Unit) {
 }
 
 @Composable
-fun QuickActionsRow(onLeaderboard: () -> Unit) {
+fun QuickActionsRow(onLeaderboard: () -> Unit, onShop: () -> Unit) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         ActionCard(title = "المتصدرون", icon = "🏆", color = PL_Gold, modifier = Modifier.weight(1f).clickable { onLeaderboard() })
-        ActionCard(title = "المتجر", icon = "🏪", color = PL_Blue, modifier = Modifier.weight(1f))
+        ActionCard(title = "المتجر", icon = "🏪", color = PL_Blue, modifier = Modifier.weight(1f).clickable { onShop() })
     }
 }
 

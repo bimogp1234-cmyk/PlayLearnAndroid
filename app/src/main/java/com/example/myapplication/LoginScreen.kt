@@ -1,5 +1,7 @@
 package com.example.myapplication
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -8,13 +10,19 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.components.GoogleSignInButton
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.GoogleAuthProvider
 
 @Composable
 fun LoginScreen(
@@ -26,6 +34,22 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     val isLoading by authViewModel.isLoading.collectAsState()
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    
+    val context = LocalContext.current
+    val webClientId = stringResource(id = R.string.default_web_client_id)
+    
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)!!
+            val credential = GoogleAuthProvider.getCredential(account.idToken!!, null)
+            authViewModel.loginWithGoogle(credential, onLoginSuccess, { errorMessage = it })
+        } catch (e: ApiException) {
+            errorMessage = "Google sign in failed: ${e.message}"
+        }
+    }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Surface(
@@ -39,20 +63,20 @@ fun LoginScreen(
                 horizontalAlignment = Alignment.Start
             ) {
                 IconButton(onClick = onBack) {
-                    Text("→", fontSize = 24.sp, fontWeight = FontWeight.Bold) // Back arrow for RTL
+                    Text("→", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Text(
-                    text = "مرحباً بعودتك!", // Welcome Back
+                    text = "مرحباً بعودتك!",
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Black,
                     color = MaterialTheme.colorScheme.primary
                 )
 
                 Text(
-                    text = "سجل الدخول للمتابعة", // Sign in to continue
+                    text = "سجل الدخول للمتابعة",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -69,7 +93,7 @@ fun LoginScreen(
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp), // 2xl from tokens
+                    shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
@@ -110,12 +134,7 @@ fun LoginScreen(
 
                         Button(
                             onClick = {
-                                authViewModel.loginWithEmail(
-                                    email = email,
-                                    password = password,
-                                    onSuccess = onLoginSuccess,
-                                    onError = { errorMessage = it }
-                                )
+                                authViewModel.loginWithEmail(email, password, onLoginSuccess, { errorMessage = it })
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -150,7 +169,14 @@ fun LoginScreen(
 
                         GoogleSignInButton(
                             text = "الدخول بواسطة جوجل",
-                            onClick = { /* Google Login Logic */ }
+                            onClick = { 
+                                val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                    .requestIdToken(webClientId)
+                                    .requestEmail()
+                                    .build()
+                                val googleSignInClient = GoogleSignIn.getClient(context, gso)
+                                googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                            }
                         )
                     }
                 }
@@ -163,7 +189,7 @@ fun LoginScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(text = "ليس لديك حساب؟")
-                    TextButton(onClick = { /* Navigate to Sign Up */ }) {
+                    TextButton(onClick = { /* Navigate to Sign Up handled by NavHost */ }) {
                         Text(text = "إنشاء حساب", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     }
                 }

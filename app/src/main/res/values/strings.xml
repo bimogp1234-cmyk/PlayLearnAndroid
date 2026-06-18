@@ -12,4 +12,5 @@
     <string name="phone_login_title">Phone Login</string>
     <string name="verify_btn">Verify</string>
     <string name="send_code_btn">Send Code</string>
+    <string name="default_web_client_id">1031629784131-1iepcq281kq0dv5vbm2u5cjc6mica9kn.apps.googleusercontent.com</string>
 </resources>

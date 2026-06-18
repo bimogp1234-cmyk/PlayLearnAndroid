@@ -1,5 +1,7 @@
 package com.example.myapplication
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,13 +12,20 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.components.GoogleSignInButton
+import com.example.myapplication.data.User
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.GoogleAuthProvider
 
 @Composable
 fun SignUpScreen(
@@ -30,6 +39,22 @@ fun SignUpScreen(
     var password by remember { mutableStateOf("") }
     val isLoading by authViewModel.isLoading.collectAsState()
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    
+    val context = LocalContext.current
+    val webClientId = stringResource(id = R.string.default_web_client_id)
+    
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)!!
+            val credential = GoogleAuthProvider.getCredential(account.idToken!!, null)
+            authViewModel.loginWithGoogle(credential, onSignUpSuccess, { errorMessage = it })
+        } catch (e: ApiException) {
+            errorMessage = "Google sign up failed: ${e.message}"
+        }
+    }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Surface(
@@ -50,14 +75,14 @@ fun SignUpScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Text(
-                    text = "إنشاء حساب جديد", // Create New Account
+                    text = "إنشاء حساب جديد",
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Black,
                     color = MaterialTheme.colorScheme.primary
                 )
 
                 Text(
-                    text = "انضم إلى مجتمعنا التعليمي اليوم", // Join our community
+                    text = "انضم إلى مجتمعنا التعليمي اليوم",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -130,18 +155,13 @@ fun SignUpScreen(
 
                         Button(
                             onClick = {
-                                val user = com.example.myapplication.data.User(
+                                val user = User(
                                     name = name,
                                     email = email,
                                     phone = phone,
-                                    role = "student" // Default role
+                                    role = "student"
                                 )
-                                authViewModel.signUpWithEmail(
-                                    user = user,
-                                    password = password,
-                                    onSuccess = onSignUpSuccess,
-                                    onError = { errorMessage = it }
-                                )
+                                authViewModel.signUpWithEmail(user, password, onSignUpSuccess, { errorMessage = it })
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -176,7 +196,14 @@ fun SignUpScreen(
 
                         GoogleSignInButton(
                             text = "التسجيل بواسطة جوجل",
-                            onClick = { /* Google SignUp Logic */ }
+                            onClick = { 
+                                val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                    .requestIdToken(webClientId)
+                                    .requestEmail()
+                                    .build()
+                                val googleSignInClient = GoogleSignIn.getClient(context, gso)
+                                googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                            }
                         )
                     }
                 }

@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.ui.theme.PL_Green
 import com.example.myapplication.ui.theme.PL_Red
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 enum class QuizType {
     MULTIPLE_CHOICE, IMAGE_SELECTION, WORD_MATCHING
@@ -34,6 +36,8 @@ fun QuizScreen(
     quizViewModel: QuizViewModel = viewModel()
 ) {
     val uiState by quizViewModel.uiState.collectAsState()
+    val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
     
     val quizType = when(uiState.currentStep) {
         1 -> QuizType.IMAGE_SELECTION
@@ -43,12 +47,19 @@ fun QuizScreen(
 
     LaunchedEffect(uiState.isFinished) {
         if (uiState.isFinished) {
+            // Real Logic: Update student progress in Firestore
+            val uid = auth.currentUser?.uid
+            if (uid != null) {
+                db.collection("users").document(uid)
+                    .update("xp", com.google.firebase.firestore.FieldValue.increment(uiState.xpEarned.toLong()))
+            }
             onFinish(uiState.xpEarned)
         }
     }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
             topBar = {
                 QuizTopBar(
                     progress = uiState.currentStep / uiState.totalSteps.toFloat(), 
@@ -110,12 +121,12 @@ fun QuizTopBar(progress: Float, hearts: Int, onBack: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onBack) { Text("✕", fontSize = 20.sp, color = Color.Gray, fontWeight = FontWeight.Bold) }
-        Box(modifier = Modifier.weight(1f).height(11.dp).background(Color(0xFFEAE6DC), RoundedCornerShape(7.dp))) {
+        Box(modifier = Modifier.weight(1f).height(11.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(7.dp))) {
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
                     .fillMaxWidth(progress)
-                    .background(PL_Green, RoundedCornerShape(7.dp))
+                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(7.dp))
             )
         }
         Spacer(modifier = Modifier.width(12.dp))
@@ -132,7 +143,7 @@ fun QuizBottomBar(buttonText: String, isEnabled: Boolean, isChecked: Boolean, on
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shadowElevation = 8.dp,
-        color = Color.White
+        color = MaterialTheme.colorScheme.surface
     ) {
         Button(
             onClick = onClick,
@@ -140,10 +151,9 @@ fun QuizBottomBar(buttonText: String, isEnabled: Boolean, isChecked: Boolean, on
             shape = RoundedCornerShape(22.dp),
             enabled = isEnabled,
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (isChecked) PL_Green else PL_Green,
-                disabledContainerColor = Color(0xFFD9D4C8)
-            ),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                containerColor = MaterialTheme.colorScheme.primary,
+                disabledContainerColor = MaterialTheme.colorScheme.outlineVariant
+            )
         ) {
             Text(text = buttonText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
@@ -152,17 +162,17 @@ fun QuizBottomBar(buttonText: String, isEnabled: Boolean, isChecked: Boolean, on
 
 @Composable
 fun ImageQuizContent(selectedOption: Int?, isChecked: Boolean, onSelect: (Int) -> Unit) {
-    Text("اختر الصورة الصحيحة", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+    Text("اختر الصورة الصحيحة", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface)
     
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 24.dp)
-            .background(Color(0xFFFBF7F0), RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f), RoundedCornerShape(18.dp))
             .padding(26.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text("تفاحة", fontSize = 26.sp, fontWeight = FontWeight.Black, color = Color(0xFF1F2933))
+        Text("تفاحة", fontSize = 26.sp, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
     }
     
     val options = listOf("🍎", "📚", "🍊", "🍇")
@@ -189,17 +199,17 @@ fun ImageQuizContent(selectedOption: Int?, isChecked: Boolean, onSelect: (Int) -
 
 @Composable
 fun MultipleChoiceContent(selectedOption: Int?, isChecked: Boolean, onSelect: (Int) -> Unit) {
-    Text("اختر الترجمة الصحيحة", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+    Text("اختر الترجمة الصحيحة", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface)
     
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 24.dp)
-            .background(Color(0xFFFBF7F0), RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f), RoundedCornerShape(18.dp))
             .padding(26.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text("Hello", fontSize = 26.sp, fontWeight = FontWeight.Black, color = Color(0xFF1F2933))
+        Text("Hello", fontSize = 26.sp, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
     }
     
     val options = listOf("مرحباً", "وداعاً", "شكراً", "نعم")
@@ -217,7 +227,7 @@ fun MultipleChoiceContent(selectedOption: Int?, isChecked: Boolean, onSelect: (I
 
 @Composable
 fun WordMatchContent() {
-    Text("طابق الكلمات بالترجمة الصحيحة", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+    Text("طابق الكلمات بالترجمة الصحيحة", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface)
     Spacer(modifier = Modifier.height(32.dp))
     
     Row(modifier = Modifier.fillMaxWidth()) {

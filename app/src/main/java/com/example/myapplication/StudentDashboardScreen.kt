@@ -7,132 +7,106 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myapplication.ui.theme.PL_GoldSoft
-import com.example.myapplication.ui.theme.PL_GreenDark
-import com.example.myapplication.ui.theme.PL_GreenSoft
+import com.example.myapplication.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StudentDashboardScreen(
-    onStartLesson: () -> Unit = {},
-    onNavigateToLeaderboard: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
+    onStartLesson: () -> Unit,
+    onNavigateToLeaderboard: () -> Unit,
+    onNavigateToProfile: () -> Unit,
+    authViewModel: AuthViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
+    val user by authViewModel.currentUser.collectAsState()
+
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
             topBar = {
-                TopAppBar(
-                    title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(34.dp).background(PL_GreenSoft, CircleShape), contentAlignment = Alignment.Center) {
-                                Text("ر", fontWeight = FontWeight.Bold, color = PL_GreenDark)
-                            }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column {
-                                Text("أهلاً، رنا!", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                Text("لنستمر في التعلم اليوم", fontSize = 12.sp, color = Color.Gray)
-                            }
-                        }
-                    },
-                    actions = {
-                        StatChip(icon = "🔥", value = "7", color = Color(0xFFA35A00), bgColor = PL_GoldSoft)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        StatChip(icon = "●", value = "1,250", color = PL_GreenDark, bgColor = PL_GreenSoft)
-                        Spacer(modifier = Modifier.width(16.dp))
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                StudentHUD(
+                    xp = user?.xp ?: 0,
+                    streak = user?.streak ?: 0,
+                    hearts = 5,
+                    onProfileClick = onNavigateToProfile
                 )
-            },
-            bottomBar = {
-                NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
-                    NavigationBarItem(
-                        icon = { Text("🏠", fontSize = 20.sp) },
-                        label = { Text("الرئيسية") },
-                        selected = true,
-                        onClick = {}
-                    )
-                    NavigationBarItem(
-                        icon = { Text("📚", fontSize = 20.sp) },
-                        label = { Text("دروسي") },
-                        selected = false,
-                        onClick = onStartLesson
-                    )
-                    NavigationBarItem(
-                        icon = { Text("🏆", fontSize = 20.sp) },
-                        label = { Text("المتصدرين") },
-                        selected = false,
-                        onClick = onNavigateToLeaderboard
-                    )
-                    NavigationBarItem(
-                        icon = { Text("👤", fontSize = 20.sp) },
-                        label = { Text("حسابي") },
-                        selected = false,
-                        onClick = onNavigateToProfile
-                    )
-                }
             }
         ) { innerPadding ->
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(horizontal = 20.dp)
             ) {
                 item {
-                    Row(modifier = Modifier.padding(vertical = 14.dp), horizontalArrangement = Arrangement.Start) {
-                        repeat(4) { Text("❤️", fontSize = 18.sp, modifier = Modifier.padding(horizontal = 2.dp)) }
-                        Text("🤍", fontSize = 18.sp, modifier = Modifier.padding(horizontal = 2.dp))
-                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+                    WelcomeCard(userName = user?.name ?: "طالبنا المبدع")
                 }
 
                 item {
-                    Text("استمر من حيث توقفت", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Text(
+                        "استمر في التعلم",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    CurrentCourseCard(onStartLesson)
                 }
 
                 item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth().clickable { onStartLesson() },
-                        shape = RoundedCornerShape(18.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFEAE6DC))
-                    ) {
-                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(46.dp).background(Color(0xFFEEF1FF), RoundedCornerShape(13.dp)), contentAlignment = Alignment.Center) {
-                                Text("📖", fontSize = 22.sp)
-                            }
-                            Spacer(modifier = Modifier.width(13.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("الوحدة 3: الحروف والكلمات", fontWeight = FontWeight.Bold, fontSize = 14.5.sp)
-                                Text("7 من 11 درساً مكتمل", fontSize = 12.sp, color = Color.Gray)
-                                Spacer(modifier = Modifier.height(10.dp))
-                                Box(modifier = Modifier.fillMaxWidth().height(9.dp).background(Color(0xFFEAE6DC), RoundedCornerShape(6.dp))) {
-                                    Box(modifier = Modifier.fillMaxHeight().fillMaxWidth(0.64f).background(Color(0xFF1CB854), RoundedCornerShape(6.dp)))
-                                }
-                            }
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(32.dp))
+                    QuickActionsRow(onNavigateToLeaderboard)
                 }
 
                 item {
-                    Text("دوراتك", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        MiniCourseCard(title = "اللغة العربية", icon = "📖", color = PL_GreenSoft, tint = PL_GreenDark, modifier = Modifier.weight(1f))
-                        MiniCourseCard(title = "الرياضيات", icon = "🔢", color = PL_GoldSoft, tint = Color(0xFFA35A00), modifier = Modifier.weight(1f))
-                    }
+                    Spacer(modifier = Modifier.height(80.dp))
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun StudentHUD(xp: Int, streak: Int, hearts: Int, onProfileClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shadowElevation = 2.dp,
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StatChip(icon = "🔥", value = streak.toString(), color = PL_Gold, bgColor = PL_GoldSoft)
+                Spacer(modifier = Modifier.width(8.dp))
+                StatChip(icon = "💎", value = xp.toString(), color = PL_Blue, bgColor = PL_Blue.copy(alpha = 0.1f))
+                Spacer(modifier = Modifier.width(8.dp))
+                StatChip(icon = "❤️", value = hearts.toString(), color = PL_Red, bgColor = PL_RedSoft)
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                    .clickable { onProfileClick() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text("👤", fontSize = 20.sp)
             }
         }
     }
@@ -142,38 +116,107 @@ fun StudentDashboardScreen(
 fun StatChip(icon: String, value: String, color: Color, bgColor: Color) {
     Surface(
         color = bgColor,
-        shape = RoundedCornerShape(18.dp)
+        shape = RoundedCornerShape(12.dp)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(icon, fontSize = 14.sp)
-            Spacer(modifier = Modifier.width(5.dp))
+            Spacer(modifier = Modifier.width(4.dp))
             Text(value, fontWeight = FontWeight.Bold, color = color, fontSize = 13.sp)
         }
     }
 }
 
 @Composable
-fun MiniCourseCard(title: String, icon: String, color: Color, tint: Color, modifier: Modifier) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFEAE6DC))
+fun WelcomeCard(userName: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(140.dp)
+            .background(
+                Brush.horizontalGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))),
+                RoundedCornerShape(24.dp)
+            )
+            .padding(24.dp)
     ) {
-        Column(modifier = Modifier.padding(13.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(modifier = Modifier.size(36.dp).background(color, RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
-                Text(icon, fontSize = 18.sp)
+        Column(modifier = Modifier.align(Alignment.CenterStart)) {
+            Text("مرحباً، $userName! 👋", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("جاهز لمغامرة تعليمية جديدة؟", color = Color.White.copy(alpha = 0.9f), fontSize = 14.sp)
+        }
+        Text("🚀", fontSize = 60.sp, modifier = Modifier.align(Alignment.CenterEnd))
+    }
+}
+
+@Composable
+fun CurrentCourseCard(onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(50.dp)
+                        .background(PL_GreenSoft, RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("📚", fontSize = 24.sp)
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column {
+                    Text("أساسيات القراءة", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text("الوحدة الأولى: الحروف", color = Color.Gray, fontSize = 13.sp)
+                }
             }
+            
+            Spacer(modifier = Modifier.height(20.dp))
+            
+            LinearProgressIndicator(
+                progress = 0.65f,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
+                    .clip(CircleShape),
+                color = PL_Green,
+                trackColor = PL_GreenSoft
+            )
+            
             Spacer(modifier = Modifier.height(8.dp))
-            Text(title, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Text("اكتمل 65%", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PL_GreenDark)
         }
     }
 }
 
 @Composable
-fun LessonCard(title: String, xp: String, isCompleted: Boolean, onClick: () -> Unit = {}) {
-    // Legacy - replaced by more complex cards in this version
+fun QuickActionsRow(onLeaderboard: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        ActionCard(title = "المتصدرون", icon = "🏆", color = PL_Gold, modifier = Modifier.weight(1f).clickable { onLeaderboard() })
+        ActionCard(title = "المتجر", icon = "🏪", color = PL_Blue, modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+fun ActionCard(title: String, icon: String, color: Color, modifier: Modifier) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(icon, fontSize = 32.sp)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(title, fontWeight = FontWeight.Bold, color = color, fontSize = 14.sp)
+        }
+    }
 }

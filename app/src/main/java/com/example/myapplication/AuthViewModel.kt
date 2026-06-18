@@ -1,13 +1,17 @@
 package com.example.myapplication
 
+import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.data.User
-import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.FirebaseException
+import com.google.firebase.auth.*
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import java.util.concurrent.TimeUnit
 
 class AuthViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
@@ -22,6 +26,8 @@ class AuthViewModel : ViewModel() {
 
     private val _isAuthChecked = MutableStateFlow(false)
     val isAuthChecked: StateFlow<Boolean> = _isAuthChecked
+
+    private var verificationId: String? = null
 
     init {
         checkAuth()
@@ -48,12 +54,6 @@ class AuthViewModel : ViewModel() {
             _isLoading.value = false
             _isAuthChecked.value = true
         }
-    }
-
-    fun logout() {
-        auth.signOut()
-        _currentUser.value = null
-        _isAuthChecked.value = true
     }
 
     fun loginWithEmail(email: String, password: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
@@ -94,7 +94,103 @@ class AuthViewModel : ViewModel() {
             }
     }
 
-    // Role-based logic
+    fun loginWithGoogle(credential: AuthCredential, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        _isLoading.value = true
+        auth.signInWithCredential(credential)
+            .addOnSuccessListener { result ->
+                result.user?.let { firebaseUser ->
+                    viewModelScope.launch {
+                        val existingUser = firebaseManager.getUserProfile(firebaseUser.uid)
+                        if (existingUser == null) {
+                            val newUser = User(
+                                uid = firebaseUser.uid,
+                                name = firebaseUser.displayName ?: "",
+                                email = firebaseUser.email ?: "",
+                                photoURL = firebaseUser.photoUrl?.toString() ?: ""
+                            )
+                            db.collection("users").document(firebaseUser.uid).set(newUser).await()
+                            _currentUser.value = newUser
+                        } else {
+                            _currentUser.value = existingUser
+                        }
+                        _isLoading.value = false
+                        onSuccess()
+                    }
+                }
+            }
+            .addOnFailureListener {
+                _isLoading.value = false
+                onError(it.message ?: "Google Sign-In failed")
+            }
+    }
+
+    fun sendPhoneOtp(phoneNumber: String, activity: Activity, onCodeSent: () -> Unit, onError: (String) -> Unit) {
+        _isLoading.value = true
+        val options = PhoneAuthOptions.newBuilder(auth)
+            .setPhoneNumber(phoneNumber)
+            .setTimeout(60L, TimeUnit.SECONDS)
+            .setActivity(activity)
+            .setCallbacks(object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+                override fun onVerificationCompleted(credential: PhoneAuthCredential) {
+                    signInWithPhoneCredential(credential, {}, onError)
+                }
+
+                override fun onVerificationFailed(e: FirebaseException) {
+                    _isLoading.value = false
+                    onError(e.message ?: "Verification failed")
+                }
+
+                override fun onCodeSent(id: String, token: PhoneAuthProvider.ForceResendingToken) {
+                    _isLoading.value = false
+                    verificationId = id
+                    onCodeSent()
+                }
+            })
+            .build()
+        PhoneAuthProvider.verifyPhoneNumber(options)
+    }
+
+    fun verifyOtp(code: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val id = verificationId ?: return onError("Verification ID not found")
+        val credential = PhoneAuthProvider.getCredential(id, code)
+        signInWithPhoneCredential(credential, onSuccess, onError)
+    }
+
+    private fun signInWithPhoneCredential(credential: PhoneAuthCredential, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        _isLoading.value = true
+        auth.signInWithCredential(credential)
+            .addOnSuccessListener { result ->
+                result.user?.let { firebaseUser ->
+                    viewModelScope.launch {
+                        val existingUser = firebaseManager.getUserProfile(firebaseUser.uid)
+                        if (existingUser == null) {
+                            val newUser = User(
+                                uid = firebaseUser.uid,
+                                phone = firebaseUser.phoneNumber ?: "",
+                                name = "New User"
+                            )
+                            db.collection("users").document(firebaseUser.uid).set(newUser)
+                            _currentUser.value = newUser
+                        } else {
+                            _currentUser.value = existingUser
+                        }
+                        _isLoading.value = false
+                        onSuccess()
+                    }
+                }
+            }
+            .addOnFailureListener {
+                _isLoading.value = false
+                onError(it.message ?: "Phone Sign-In failed")
+            }
+    }
+
+    fun logout() {
+        auth.signOut()
+        _currentUser.value = null
+        _isAuthChecked.value = true
+    }
+
     fun isStudent() = _currentUser.value?.role == "student"
     fun isTeacher() = _currentUser.value?.role == "teacher"
     fun isAdmin() = _currentUser.value?.role == "admin"

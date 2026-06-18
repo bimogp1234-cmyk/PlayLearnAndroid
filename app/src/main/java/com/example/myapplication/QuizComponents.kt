@@ -15,8 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myapplication.ui.theme.PL_Green
-import com.example.myapplication.ui.theme.PL_Red
+import com.example.myapplication.ui.theme.*
 
 @Composable
 fun QuizOption(
@@ -29,32 +28,28 @@ fun QuizOption(
     val borderColor = when {
         isCorrect -> PL_Green
         isWrong -> PL_Red
-        isSelected -> Color(0xFF4C6FFF) // PL_Blue
-        else -> Color(0xFFEAE6DC) // PL_Line
+        isSelected -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.outlineVariant
     }
     
     val bgColor = when {
-        isCorrect -> Color(0xFFE8F8EE) // PL_GreenSoft
-        isWrong -> Color(0xFFFDEAEA) // PL_RedSoft
-        isSelected -> Color(0xFFEEF1FF) // PL_BlueSoft
-        else -> Color.White
+        isCorrect -> PL_GreenSoft
+        isWrong -> PL_RedSoft
+        isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        else -> MaterialTheme.colorScheme.surface
     }
 
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().height(64.dp),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(2.5.dp, borderColor),
-        color = bgColor
+        border = BorderStroke(2.dp, borderColor),
+        color = bgColor,
+        shadowElevation = if (isSelected) 2.dp else 0.dp
     ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(16.dp),
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
-        )
+        Box(contentAlignment = Alignment.Center) {
+            Text(text = text, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+        }
     }
 }
 
@@ -70,84 +65,70 @@ fun ImageOption(
     val borderColor = when {
         isCorrect -> PL_Green
         isWrong -> PL_Red
-        isSelected -> Color(0xFF4C6FFF)
-        else -> Color(0xFFEAE6DC)
-    }
-
-    val bgColor = when {
-        isCorrect -> Color(0xFFE8F8EE)
-        isWrong -> Color(0xFFFDEAEA)
-        isSelected -> Color(0xFFEEF1FF)
-        else -> Color.White
+        isSelected -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.outlineVariant
     }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(140.dp)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(2.5.dp, borderColor),
-        colors = CardDefaults.cardColors(containerColor = bgColor)
+        onClick = onClick,
+        modifier = Modifier.aspectRatio(1f),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(2.dp, borderColor),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(emoji, fontSize = 44.sp)
+            Text(emoji, fontSize = 40.sp)
             Spacer(modifier = Modifier.height(8.dp))
-            Text(label, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF1F2933))
+            Text(label, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
 
 @Composable
-fun WordPair(
-    text: String,
-    isSelected: Boolean,
-    isMatched: Boolean,
-    onClick: () -> Unit
-) {
+fun WordPair(text: String, isSelected: Boolean, isMatched: Boolean, onClick: () -> Unit) {
+    val borderColor = when {
+        isMatched -> PL_Green
+        isSelected -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.outlineVariant
+    }
+    
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(
-            width = 2.dp,
-            color = if (isMatched) Color(0xFFE8F8EE) else if (isSelected) Color(0xFF1CB854) else Color(0xFFEAE6DC)
-        ),
-        color = if (isMatched) Color(0xFFE8F8EE) else if (isSelected) Color(0xFFE8F8EE) else Color.White
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().height(56.dp),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(2.dp, borderColor),
+        color = if (isMatched) PL_GreenSoft else MaterialTheme.colorScheme.surface
     ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(16.dp),
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            color = if (isMatched) Color(0xFF129142) else Color.Black
-        )
+        Box(contentAlignment = Alignment.Center) {
+            Text(text, fontWeight = FontWeight.Bold, color = if (isMatched) PL_GreenDark else MaterialTheme.colorScheme.onSurface)
+        }
     }
 }
 
 @Composable
 fun FeedbackSection(isCorrect: Boolean) {
     Row(
-        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .background(
-                if (isCorrect) Color(0xFFE8F8EE) else Color(0xFFFDEAEA),
-                RoundedCornerShape(12.dp)
-            )
-            .padding(16.dp)
+            .background(if (isCorrect) PL_GreenSoft else PL_RedSoft, RoundedCornerShape(16.dp))
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = if (isCorrect) " أحسنت! إجابة صحيحة ✨" else "للاسف، حاول مرة أخرى 💔",
-            color = if (isCorrect) Color(0xFF129142) else Color(0xFFF44B4B),
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.weight(1f)
-        )
+        Text(if (isCorrect) "✅" else "❌", fontSize = 24.sp)
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(
+                if (isCorrect) "إجابة صحيحة!" else "إجابة خاطئة",
+                fontWeight = FontWeight.Black,
+                color = if (isCorrect) PL_GreenDark else PL_Red
+            )
+            if (!isCorrect) {
+                Text("حاول مرة أخرى في السؤال التالي", fontSize = 12.sp, color = PL_Red)
+            }
+        }
     }
 }

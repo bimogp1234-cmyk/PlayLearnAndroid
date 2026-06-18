@@ -9,10 +9,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="com.example.myapplication" />
-                  <option name="mobileSdkAppId" value="1:125162493299:android:1e5f1088312a990f23a106" />
-                  <option name="projectId" value="com-example-myapplicatio-6185b" />
-                  <option name="projectNumber" value="125162493299" />
+                  <option name="appId" value="Play.learn.V1" />
+                  <option name="mobileSdkAppId" value="1:1031629784131:android:160888a5af47c272c540f6" />
+                  <option name="projectId" value="graduation-project-1f851" />
+                  <option name="projectNumber" value="1031629784131" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

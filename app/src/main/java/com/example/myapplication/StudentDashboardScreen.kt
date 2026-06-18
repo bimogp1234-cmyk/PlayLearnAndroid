@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -180,7 +181,7 @@ fun CurrentCourseCard(onClick: () -> Unit) {
             Spacer(modifier = Modifier.height(20.dp))
             
             LinearProgressIndicator(
-                progress = 0.65f,
+                progress = { 0.65f },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(10.dp)

@@ -194,4 +194,17 @@ class AuthViewModel : ViewModel() {
     fun isStudent() = _currentUser.value?.role == "student"
     fun isTeacher() = _currentUser.value?.role == "teacher"
     fun isAdmin() = _currentUser.value?.role == "admin"
+
+    fun updateUserGrade(grade: String, onComplete: () -> Unit) {
+        val uid = auth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            _isLoading.value = true
+            val success = firebaseManager.updateUserGrade(uid, grade)
+            if (success) {
+                _currentUser.value = _currentUser.value?.copy(schoolId = grade)
+            }
+            _isLoading.value = false
+            onComplete()
+        }
+    }
 }

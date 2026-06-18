@@ -7,8 +7,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -18,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,8 +26,11 @@ fun ProfileScreen(
     onSwitchToTeacher: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     isAdmin: Boolean = false,
-    onNavigateToAdmin: () -> Unit = {}
+    onNavigateToAdmin: () -> Unit = {},
+    authViewModel: AuthViewModel = viewModel()
 ) {
+    val user by authViewModel.currentUser.collectAsState()
+
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Scaffold(
             topBar = {
@@ -59,7 +62,7 @@ fun ProfileScreen(
                 Box(
                     modifier = Modifier
                         .size(100.dp)
-                        .background(Color(0xFFDCFCE7), CircleShape),
+                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text("👨‍🎓", fontSize = 48.sp)
@@ -67,17 +70,19 @@ fun ProfileScreen(
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                Text("أحمد محمد", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                Text("طالب في مدرسة الخرطوم العالمية", color = Color.Gray, fontSize = 14.sp)
+                Text(user?.name ?: "مستخدم جديد", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text(user?.schoolId ?: "لم يتم اختيار صف دراسي", color = Color.Gray, fontSize = 14.sp)
                 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Button(
-                    onClick = onSwitchToTeacher,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.secondary)
-                ) {
-                    Text("التبديل إلى لوحة المعلم", fontWeight = FontWeight.Bold)
+                if (authViewModel.isTeacher() || authViewModel.isAdmin()) {
+                    Button(
+                        onClick = onSwitchToTeacher,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.secondary)
+                    ) {
+                        Text("التبديل إلى لوحة المعلم", fontWeight = FontWeight.Bold)
+                    }
                 }
 
                 if (isAdmin) {
@@ -98,8 +103,8 @@ fun ProfileScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    StatCard(label = "XP الإجمالي", value = "1250", color = Color(0xFFFBB24F), icon = "⭐", modifier = Modifier.weight(1f))
-                    StatCard(label = "أطول سلسلة", value = "7 أيام", color = Color(0xFFF97316), icon = "🔥", modifier = Modifier.weight(1f))
+                    StatCard(label = "XP الإجمالي", value = (user?.xp ?: 0).toString(), color = Color(0xFFFBB24F), icon = "⭐", modifier = Modifier.weight(1f))
+                    StatCard(label = "أطول سلسلة", value = "${user?.streak ?: 0} أيام", color = Color(0xFFF97316), icon = "🔥", modifier = Modifier.weight(1f))
                 }
                 
                 Spacer(modifier = Modifier.height(32.dp))

@@ -30,6 +30,7 @@ sealed class Screen(val route: String) {
     object TeacherDashboard : Screen("teacher_dashboard")
     object AdminDashboard : Screen("admin_dashboard")
     object Settings : Screen("settings")
+    object GradeSelection : Screen("grade_selection")
 }
 
 @Composable
@@ -99,8 +100,20 @@ fun AppNavigation(
             SignUpScreen(
                 onBack = { navController.popBackStack() },
                 onSignUpSuccess = { 
-                    navController.navigate(Screen.Dashboard.route)
+                    navController.navigate(Screen.GradeSelection.route)
                 }
+            )
+        }
+        composable(Screen.GradeSelection.route) {
+            GradeSelectionScreen(
+                onGradeSelected = { grade ->
+                    authViewModel.updateUserGrade(grade) {
+                        navController.navigate(Screen.Dashboard.route) {
+                            popUpTo(Screen.GradeSelection.route) { inclusive = true }
+                        }
+                    }
+                },
+                onBack = { navController.popBackStack() }
             )
         }
         composable(Screen.Dashboard.route) {
@@ -112,12 +125,19 @@ fun AppNavigation(
         }
         composable(Screen.CoursePath.route) {
             CoursePathScreen(
-                onLessonSelect = { navController.navigate(Screen.Quiz.route) },
+                onLessonSelect = { lessonId -> 
+                    navController.navigate(Screen.Quiz.route + "/$lessonId") 
+                },
                 onBack = { navController.popBackStack() }
             )
         }
-        composable(Screen.Quiz.route) {
+        composable(
+            route = Screen.Quiz.route + "/{lessonId}",
+            arguments = listOf(navArgument("lessonId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val lessonId = backStackEntry.arguments?.getString("lessonId") ?: ""
             QuizScreen(
+                lessonId = lessonId,
                 onFinish = { xp -> 
                     navController.navigate(Screen.LessonSuccess.route + "/$xp")
                 },

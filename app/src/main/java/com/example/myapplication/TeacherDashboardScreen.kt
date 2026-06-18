@@ -14,11 +14,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.data.Course
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeacherDashboardScreen(onBack: () -> Unit) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("لوحة تحكم المعلم", fontWeight = FontWeight.Bold) },
@@ -33,30 +38,127 @@ fun TeacherDashboardScreen(onBack: () -> Unit) {
             }
         }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Stats Section
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                AnalyticsCard("الطلاب", "45", Color(0xFF3B82F6), Modifier.weight(1f))
-                AnalyticsCard("الدورات", "3", Color(0xFF16A34A), Modifier.weight(1f))
+            item {
+                // Stats Section
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    AnalyticsCard("الطلاب", "45", Color(0xFF3B82F6), Modifier.weight(1f))
+                    AnalyticsCard("الدورات", "3", Color(0xFF16A34A), Modifier.weight(1f))
+                }
             }
             
-            Spacer(modifier = Modifier.height(24.dp))
+            item {
+                UploadContentSection(onUploadSuccess = { 
+                    scope.launch {
+                        snackbarHostState.showSnackbar("تم نشر الدرس بنجاح! 🎉")
+                    }
+                })
+            }
             
-            Text("دوراتي التدريبية", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            item {
+                Text("دوراتي التدريبية", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            }
+            
+            items(listOf(
+                com.example.myapplication.data.Course(titleAr = "أساسيات الرياضيات", level = "الصف الرابع"),
+                com.example.myapplication.data.Course(titleAr = "اللغة العربية - قواعد", level = "الصف الخامس")
+            )) { course ->
+                CourseTeacherItem(course)
+            }
+        }
+    }
+}
+
+@Composable
+fun UploadContentSection(
+    onUploadSuccess: () -> Unit
+) {
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var isUploading by remember { mutableStateOf(false) }
+    
+    val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(24.dp)) {
+            Text(
+                text = "📤 رفع محتوى تعليمي جديد",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Black,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
             
             Spacer(modifier = Modifier.height(16.dp))
-            
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(listOf(
-                    Course(titleAr = "أساسيات الرياضيات", level = "الصف الرابع"),
-                    Course(titleAr = "اللغة العربية - قواعد", level = "الصف الخامس")
-                )) { course ->
-                    CourseTeacherItem(course)
+
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("عنوان الدرس") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                enabled = !isUploading
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("المحتوى التعليمي") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                maxLines = 5,
+                enabled = !isUploading
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    if (title.isNotEmpty() && description.isNotEmpty()) {
+                        isUploading = true
+                        val lesson = com.example.myapplication.data.Lesson(
+                            id = db.collection("lessons").document().id,
+                            courseId = "default_course_id",
+                            titleAr = title,
+                            content = description
+                        )
+                        db.collection("lessons").document(lesson.id).set(lesson)
+                            .addOnSuccessListener {
+                                isUploading = false
+                                onUploadSuccess()
+                                title = ""
+                                description = ""
+                            }
+                            .addOnFailureListener {
+                                isUploading = false
+                            }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(16.dp),
+                enabled = !isUploading && title.isNotEmpty() && description.isNotEmpty(),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
+                if (isUploading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("نشر الدرس للطلاب", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
         }

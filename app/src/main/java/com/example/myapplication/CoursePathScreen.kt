@@ -17,12 +17,31 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.runtime.*
+import androidx.lifecycle.viewmodel.compose.viewModel
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CoursePathScreen(
     onLessonSelect: (String) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    authViewModel: AuthViewModel = viewModel(),
+    courseViewModel: CourseViewModel = viewModel()
 ) {
+    val user by authViewModel.currentUser.collectAsState()
+    val lessons by courseViewModel.lessons.collectAsState()
+    val isLoading by courseViewModel.isLoading.collectAsState()
+
+    LaunchedEffect(user?.schoolId) {
+        user?.schoolId?.let { grade ->
+            // In this phase, we assume there's one main course for each grade
+            // For now, let's fetch lessons for a default "math_01" or similar
+            // In a real app, you'd first fetch the course ID
+            courseViewModel.loadLessons("default_course_id") 
+        }
+    }
+
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Scaffold(
             topBar = {
@@ -39,32 +58,42 @@ fun CoursePathScreen(
                 )
             }
         ) { innerPadding ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .background(MaterialTheme.colorScheme.background),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                contentPadding = PaddingValues(vertical = 32.dp)
-            ) {
-                item {
-                    UnitHeader(number = 1, title = "الأساسيات", description = "تعلم التحيات والأرقام البسيطة")
-                    Spacer(modifier = Modifier.height(24.dp))
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
                 }
+            } else if (lessons.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                    Text("لا توجد دروس متاحة حالياً لصفك الدراسي", color = Color.Gray)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .background(MaterialTheme.colorScheme.background),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    contentPadding = PaddingValues(vertical = 32.dp)
+                ) {
+                    item {
+                        UnitHeader(number = 1, title = "الأساسيات", description = "ابدأ رحلتك التعليمية اليوم")
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
 
-                items(5) { index ->
-                    val isLocked = index > 1
-                    val isCompleted = index < 1
-                    
-                    PathNode(
-                        label = "الدرس ${index + 1}",
-                        isLocked = isLocked,
-                        isCompleted = isCompleted,
-                        onClick = { if (!isLocked) onLessonSelect("lesson_$index") }
-                    )
-                    
-                    if (index < 4) {
-                        VerticalPathLine(isLocked = index >= 1)
+                    itemsIndexed(lessons) { index, lesson ->
+                        val isLocked = false // Logic for locking can be added later
+                        val isCompleted = false 
+                        
+                        PathNode(
+                            label = lesson.titleAr,
+                            isLocked = isLocked,
+                            isCompleted = isCompleted,
+                            onClick = { if (!isLocked) onLessonSelect(lesson.id) }
+                        )
+                        
+                        if (index < lessons.size - 1) {
+                            VerticalPathLine(isLocked = isLocked)
+                        }
                     }
                 }
             }

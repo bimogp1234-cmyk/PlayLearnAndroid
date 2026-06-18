@@ -31,6 +31,15 @@ class FirebaseManager {
         presenceRef.onDisconnect().removeValue()
     }
 
+    suspend fun updateUserGrade(uid: String, grade: String): Boolean {
+        return try {
+            db.collection("users").document(uid).update("schoolId", grade).await()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     // Courses
     suspend fun getCourses(): List<Course> {
         return try {

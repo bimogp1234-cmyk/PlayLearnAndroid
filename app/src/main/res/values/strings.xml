@@ -1,11 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">My Application</string>
-    <string name="action_go">Go</string>
-    <string name="baking_title">Baking with Gemini</string>
-    <string name="label_prompt">Prompt</string>
-    <string name="prompt_placeholder">Provide a recipe for the baked goods in the image</string>
-    <string name="image1_description">Cupcake</string>
-    <string name="image2_description">Cookies</string>
-    <string name="image3_description">Cake</string>
-    <string name="results_placeholder">(Results will appear here)</string>
+    <string name="app_name">PlayLearn</string>
+    <string name="welcome_title">Learn the Fun Way! ✨</string>
+    <string name="welcome_subtitle">Join thousands of students improving their skills daily through play</string>
+    <string name="login_btn">Login</string>
+    <string name="signup_btn">Create New Account</string>
+    <string name="select_role_title">Select Your Role</string>
+    <string name="role_student">Student</string>
+    <string name="role_teacher">Teacher</string>
+    <string name="role_admin">School Admin</string>
+    <string name="phone_login_title">Phone Login</string>
+    <string name="verify_btn">Verify</string>
+    <string name="send_code_btn">Send Code</string>
 </resources>

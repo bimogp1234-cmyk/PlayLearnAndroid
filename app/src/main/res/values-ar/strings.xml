@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">بليرن</string>
+    <string name="welcome_title">تعلم بطريقة ممتعة! ✨</string>
+    <string name="welcome_subtitle">انضم إلى آلاف الطلاب الذين يطورون مهاراتهم يومياً من خلال اللعب</string>
+    <string name="login_btn">تسجيل الدخول</string>
+    <string name="signup_btn">إنشاء حساب جديد</string>
+    <string name="select_role_title">اختر دورك</string>
+    <string name="role_student">طالب</string>
+    <string name="role_teacher">معلم</string>
+    <string name="role_admin">إدارة المدرسة</string>
+    <string name="phone_login_title">تسجيل الدخول برقم الهاتف</string>
+    <string name="verify_btn">تحقق</string>
+    <string name="send_code_btn">إرسال الرمز</string>
+</resources>

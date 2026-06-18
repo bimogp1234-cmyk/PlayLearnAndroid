@@ -1,0 +1,20 @@
+{
+  "rules": {
+    "onlineUsers": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+    "chatRooms": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "studentPresence": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    }
+  }
+}

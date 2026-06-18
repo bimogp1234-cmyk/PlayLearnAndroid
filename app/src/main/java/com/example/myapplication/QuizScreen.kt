@@ -31,6 +31,7 @@ enum class QuizType {
 
 @Composable
 fun QuizScreen(
+    lessonId: String = "default_lesson",
     onFinish: (Int) -> Unit,
     onBack: () -> Unit,
     quizViewModel: QuizViewModel = viewModel()
@@ -39,15 +40,12 @@ fun QuizScreen(
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
     
-    val quizType = when(uiState.currentStep) {
-        1 -> QuizType.IMAGE_SELECTION
-        2 -> QuizType.MULTIPLE_CHOICE
-        else -> QuizType.WORD_MATCHING
+    LaunchedEffect(lessonId) {
+        quizViewModel.loadQuiz(lessonId)
     }
 
     LaunchedEffect(uiState.isFinished) {
         if (uiState.isFinished) {
-            // Real Logic: Update student progress in Firestore
             val uid = auth.currentUser?.uid
             if (uid != null) {
                 db.collection("users").document(uid)
@@ -62,14 +60,14 @@ fun QuizScreen(
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
                 QuizTopBar(
-                    progress = uiState.currentStep / uiState.totalSteps.toFloat(), 
+                    progress = if (uiState.totalSteps > 0) (uiState.currentStep + 1) / uiState.totalSteps.toFloat() else 0f, 
                     hearts = uiState.hearts,
                     onBack = onBack
                 )
             },
             bottomBar = {
                 QuizBottomBar(
-                    buttonText = if (uiState.isChecked) (if (uiState.currentStep < uiState.totalSteps) "متابعة" else "إنهاء") else "تحقق",
+                    buttonText = if (uiState.isChecked) (if (uiState.currentStep < uiState.totalSteps - 1) "متابعة" else "إنهاء") else "تحقق",
                     isEnabled = uiState.selectedOption != null,
                     isChecked = uiState.isChecked,
                     onClick = {
@@ -82,32 +80,45 @@ fun QuizScreen(
                 )
             }
         ) { innerPadding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                when (quizType) {
-                    QuizType.IMAGE_SELECTION -> ImageQuizContent(
-                        selectedOption = uiState.selectedOption,
-                        isChecked = uiState.isChecked,
-                        onSelect = { quizViewModel.selectOption(it) }
-                    )
-                    QuizType.MULTIPLE_CHOICE -> MultipleChoiceContent(
-                        selectedOption = uiState.selectedOption,
-                        isChecked = uiState.isChecked,
-                        onSelect = { quizViewModel.selectOption(it) }
-                    )
-                    QuizType.WORD_MATCHING -> WordMatchContent()
+            if (uiState.isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
                 }
-
-                if (uiState.isChecked && quizType != QuizType.WORD_MATCHING) {
+            } else if (uiState.questions.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                    Text("لا يوجد اختبار لهذا الدرس حالياً")
+                }
+            } else {
+                val currentQuestion = uiState.questions[uiState.currentStep]
+                
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(horizontal = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    Text(currentQuestion.questionAr, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center)
+                    
                     Spacer(modifier = Modifier.height(32.dp))
-                    FeedbackSection(isCorrect = uiState.isCorrect)
+
+                    currentQuestion.answers.forEachIndexed { index, option ->
+                        QuizOption(
+                            text = option,
+                            isSelected = uiState.selectedOption == index,
+                            isCorrect = uiState.isChecked && option == currentQuestion.correctAnswer,
+                            isWrong = uiState.isChecked && uiState.selectedOption == index && option != currentQuestion.correctAnswer,
+                            onClick = { quizViewModel.selectOption(index) }
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
+                    if (uiState.isChecked) {
+                        Spacer(modifier = Modifier.height(32.dp))
+                        FeedbackSection(isCorrect = uiState.isCorrect)
+                    }
                 }
             }
         }

@@ -4,6 +4,7 @@ import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.data.User
+import com.example.myapplication.utils.ErrorMapper
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.*
 import com.google.firebase.firestore.FirebaseFirestore
@@ -26,6 +27,9 @@ class AuthViewModel : ViewModel() {
 
     private val _isAuthChecked = MutableStateFlow(false)
     val isAuthChecked: StateFlow<Boolean> = _isAuthChecked
+
+    private val _verificationError = MutableStateFlow<String?>(null)
+    val verificationError: StateFlow<String?> = _verificationError
 
     private var verificationId: String? = null
 
@@ -60,14 +64,19 @@ class AuthViewModel : ViewModel() {
         _isLoading.value = true
         auth.signInWithEmailAndPassword(email, password)
             .addOnSuccessListener { result ->
-                result.user?.let {
-                    fetchUserData(it.uid)
+                val firebaseUser = result.user
+                if (firebaseUser != null && !firebaseUser.isEmailVerified) {
+                    _isLoading.value = false
+                    onError("يرجى تفعيل حسابك من خلال الرابط المرسل لبريدك الإلكتروني")
+                    firebaseUser.sendEmailVerification()
+                } else {
+                    result.user?.let { fetchUserData(it.uid) }
                     onSuccess()
                 }
             }
             .addOnFailureListener {
                 _isLoading.value = false
-                onError(it.message ?: "Authentication failed")
+                onError(ErrorMapper.mapFirebaseError(it as? Exception))
             }
     }
 
@@ -75,22 +84,25 @@ class AuthViewModel : ViewModel() {
         _isLoading.value = true
         auth.createUserWithEmailAndPassword(user.email, password)
             .addOnSuccessListener { result ->
-                val uid = result.user?.uid ?: return@addOnSuccessListener
+                val firebaseUser = result.user ?: return@addOnSuccessListener
+                firebaseUser.sendEmailVerification()
+                
+                val uid = firebaseUser.uid
                 val finalUser = user.copy(uid = uid)
                 db.collection("users").document(uid).set(finalUser)
                     .addOnSuccessListener {
-                        _currentUser.value = finalUser
                         _isLoading.value = false
+                        onError("تم إنشاء الحساب! يرجى تفعيل البريد الإلكتروني لتسجيل الدخول")
                         onSuccess()
                     }
                     .addOnFailureListener {
                         _isLoading.value = false
-                        onError(it.message ?: "Failed to save user profile")
+                        onError("فشل حفظ بيانات الملف الشخصي")
                     }
             }
             .addOnFailureListener {
                 _isLoading.value = false
-                onError(it.message ?: "Registration failed")
+                onError(ErrorMapper.mapFirebaseError(it as? Exception))
             }
     }
 
@@ -120,7 +132,7 @@ class AuthViewModel : ViewModel() {
             }
             .addOnFailureListener {
                 _isLoading.value = false
-                onError(it.message ?: "Google Sign-In failed")
+                onError(ErrorMapper.mapFirebaseError(it as? Exception))
             }
     }
 
@@ -181,7 +193,7 @@ class AuthViewModel : ViewModel() {
             }
             .addOnFailureListener {
                 _isLoading.value = false
-                onError(it.message ?: "Phone Sign-In failed")
+                onError(ErrorMapper.mapFirebaseError(it as? Exception))
             }
     }
 
@@ -194,6 +206,8 @@ class AuthViewModel : ViewModel() {
     fun isStudent() = _currentUser.value?.role == "student"
     fun isTeacher() = _currentUser.value?.role == "teacher"
     fun isAdmin() = _currentUser.value?.role == "admin"
+
+    fun getCurrentFirebaseUser() = auth.currentUser
 
     fun updateUserGrade(grade: String, onComplete: () -> Unit) {
         val uid = auth.currentUser?.uid ?: return

@@ -79,3 +79,11 @@ data class LeaderboardEntry(
     val xp: Int = 0,
     val rank: Int = 0
 )
+
+data class ChatMessage(
+    val id: String = "",
+    val senderId: String = "",
+    val senderName: String = "",
+    val text: String = "",
+    val timestamp: Long = System.currentTimeMillis()
+)

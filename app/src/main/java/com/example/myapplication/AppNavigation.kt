@@ -32,6 +32,7 @@ sealed class Screen(val route: String) {
     object Settings : Screen("settings")
     object GradeSelection : Screen("grade_selection")
     object Shop : Screen("shop")
+    object Chat : Screen("chat")
 }
 
 @Composable
@@ -52,10 +53,16 @@ fun AppNavigation(
     }
 
     val startRoute = if (currentUser != null) {
-        when(currentUser?.role) {
-            "teacher" -> Screen.TeacherDashboard.route
-            "admin" -> Screen.AdminDashboard.route
-            else -> Screen.Dashboard.route
+        // Check if email is verified for email/password users
+        val firebaseUser = authViewModel.getCurrentFirebaseUser()
+        if (firebaseUser != null && !firebaseUser.isEmailVerified && firebaseUser.providerData.any { it.providerId == "password" }) {
+            Screen.Landing.route
+        } else {
+            when(currentUser?.role) {
+                "teacher" -> Screen.TeacherDashboard.route
+                "admin" -> Screen.AdminDashboard.route
+                else -> Screen.Dashboard.route
+            }
         }
     } else {
         Screen.Landing.route
@@ -122,7 +129,8 @@ fun AppNavigation(
                 onStartLesson = { navController.navigate(Screen.CoursePath.route) },
                 onNavigateToLeaderboard = { navController.navigate(Screen.Leaderboard.route) },
                 onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
-                onNavigateToShop = { navController.navigate(Screen.Shop.route) }
+                onNavigateToShop = { navController.navigate(Screen.Shop.route) },
+                onNavigateToChat = { navController.navigate(Screen.Chat.route) }
             )
         }
         composable(Screen.CoursePath.route) {
@@ -163,6 +171,11 @@ fun AppNavigation(
         }
         composable(Screen.Shop.route) {
             ShopScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Screen.Chat.route) {
+            ChatScreen(
                 onBack = { navController.popBackStack() }
             )
         }

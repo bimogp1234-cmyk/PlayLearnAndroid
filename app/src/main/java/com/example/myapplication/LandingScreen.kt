@@ -73,14 +73,12 @@ fun LandingScreen(
                     enter = fadeIn(tween(1000)) + expandVertically(tween(1000))
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        // Branding Logo using the new official app_logo.jpg
+                        // Branding Logo using the new official app_logo.png
                         Box(
                             modifier = Modifier
-                                .size(160.dp)
+                                .size(220.dp) // Increased size for better visibility
                                 .scale(scale)
-                                .clip(RoundedCornerShape(32.dp))
-                                .background(Color.White)
-                                .padding(8.dp),
+                                .padding(4.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Image(

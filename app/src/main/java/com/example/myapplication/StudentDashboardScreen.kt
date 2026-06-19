@@ -27,6 +27,7 @@ fun StudentDashboardScreen(
     onNavigateToLeaderboard: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToShop: () -> Unit,
+    onNavigateToChat: () -> Unit,
     authViewModel: AuthViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val user by authViewModel.currentUser.collectAsState()
@@ -70,7 +71,8 @@ fun StudentDashboardScreen(
                     Spacer(modifier = Modifier.height(32.dp))
                     QuickActionsRow(
                         onLeaderboard = onNavigateToLeaderboard,
-                        onShop = onNavigateToShop
+                        onShop = onNavigateToShop,
+                        onChat = onNavigateToChat
                     )
                 }
 
@@ -201,10 +203,18 @@ fun CurrentCourseCard(onClick: () -> Unit) {
 }
 
 @Composable
-fun QuickActionsRow(onLeaderboard: () -> Unit, onShop: () -> Unit) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        ActionCard(title = "المتصدرون", icon = "🏆", color = PL_Gold, modifier = Modifier.weight(1f).clickable { onLeaderboard() })
-        ActionCard(title = "المتجر", icon = "🏪", color = PL_Blue, modifier = Modifier.weight(1f).clickable { onShop() })
+fun QuickActionsRow(onLeaderboard: () -> Unit, onShop: () -> Unit, onChat: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            ActionCard(title = "المتصدرون", icon = "🏆", color = PL_Gold, modifier = Modifier.weight(1f).clickable { onLeaderboard() })
+            ActionCard(title = "المتجر", icon = "🏪", color = PL_Blue, modifier = Modifier.weight(1f).clickable { onShop() })
+        }
+        ActionCard(
+            title = "غرفة المناقشة", 
+            icon = "💬", 
+            color = MaterialTheme.colorScheme.primary, 
+            modifier = Modifier.fillMaxWidth().clickable { onChat() }
+        )
     }
 }
 
